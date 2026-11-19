@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gaji Proyek Bangunan</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg">
+<meta name="theme-color" content="#d97706">
+<style>
+:root{--bg:#f6f4f0;--card:#fff;--tx:#1f2937;--mu:#6b7280;--ac:#d97706;--bd:#e5e1d8;--dg:#dc2626;color-scheme:light}
+@media(prefers-color-scheme:dark){:root{--bg:#161616;--card:#222;--tx:#f3f4f6;--mu:#9ca3af;--bd:#3a3a3a;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;font:16px system-ui,sans-serif;background:var(--bg);color:var(--tx);padding-bottom:72px}
+header{background:var(--ac);color:#fff;padding:14px 16px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+header small{font-weight:400;opacity:.9}
+main{max-width:640px;margin:0 auto;padding:12px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:12px}
+label{display:block;font-size:13px;color:var(--mu);margin:10px 0 4px}
+input,select,textarea{width:100%;padding:11px;font-size:16px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx)}
+button{padding:11px 16px;font-size:16px;border:0;border-radius:8px;background:var(--ac);color:#fff;font-weight:600;cursor:pointer}
+button.sec{background:transparent;color:var(--tx);border:1px solid var(--bd)}
+button.del{background:transparent;color:var(--dg);padding:4px 8px;font-size:14px}
+.total{font-size:26px;font-weight:700;color:var(--ac);margin:12px 0}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--bd)}
+.row:last-child{border:0}.row b{display:block}.row span{color:var(--mu);font-size:13px}
+.r{text-align:right}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--bd);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;background:none;color:var(--mu);border-radius:0;padding:14px 4px;font-size:14px}
+nav button.on{color:var(--ac);border-top:3px solid var(--ac)}
+.tab{display:none}.tab.on{display:block}
+#msg{position:fixed;top:60px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:8px 14px;border-radius:8px;display:none;z-index:9;font-size:14px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+h3{margin:0 0 4px;font-size:16px}
+</style>
+</head>
+<body>
+<header><span>🏗️ Gaji Proyek</span><small id="sync">belum sinkron</small></header>
+<div id="msg"></div>
+<main>
+
+<section id="t-input" class="tab on">
+  <div class="card">
+    <h3>Input Gaji</h3>
+    <label>Tanggal</label><input type="date" id="g-tgl">
+    <label>Pekerja</label><select id="g-pek"></select>
+    <label>Proyek / Lokasi (opsional)</label><input id="g-pro" placeholder="mis. Rumah Pak Budi">
+    <div class="g2">
+      <div><label>Jumlah hari</label><input type="number" id="g-hari" inputmode="decimal" min="0" step="0.5" placeholder="0"></div>
+      <div><label>Upah per hari (Rp)</label><input type="number" id="g-upah" inputmode="numeric" min="0" placeholder="0"></div>
+    </div>
+    <label>Catatan (opsional)</label><input id="g-cat" placeholder="mis. minggu ke-2, lembur">
+    <div class="total" id="g-total">Rp 0</div>
+    <button id="g-simpan" style="width:100%">Simpan ke Spreadsheet</button>
+  </div>
+</section>
+
+<section id="t-riwayat" class="tab">
+  <div class="card">
+    <label style="margin-top:0">Filter pekerja</label><select id="f-pek"></select>
+    <div class="g2">
+      <div><label>Dari</label><input type="date" id="f-dari"></div>
+      <div><label>Sampai</label><input type="date" id="f-sampai"></div>
+    </div>
+    <div class="total" id="f-total">Rp 0</div>
+    <span style="color:var(--mu);font-size:13px" id="f-info"></span>
+  </div>
+  <div class="card" id="list"></div>
+</section>
+
+<section id="t-pekerja" class="tab">
+  <div class="card">
+    <h3>Tambah Pekerja</h3>
+    <label>Nama</label><input id="p-nama">
+    <div class="g2">
+      <div><label>Jabatan</label><select id="p-jab"><option>Tukang</option><option>Kenek</option><option>Mandor</option><option>Lainnya</option></select></div>
+      <div><label>Upah harian default (Rp)</label><input type="number" id="p-upah" inputmode="numeric"></div>
+    </div>
+    <button id="p-simpan" style="width:100%;margin-top:14px">Tambah</button>
+  </div>
+  <div class="card" id="plist"></div>
+</section>
+
+<section id="t-set" class="tab">
+  <div class="card">
+    <h3>Pengaturan Koneksi</h3>
+    <label>URL Web App (Apps Script)</label><input id="s-url" placeholder="https://script.google.com/macros/s/.../exec">
+    <label>Kode rahasia (TOKEN)</label><input id="s-tok" type="password">
+    <button id="s-simpan" style="width:100%;margin-top:14px">Simpan &amp; Sinkron</button>
+  </div>
+</section>
+</main>
+
+<nav>
+  <button data-t="input" class="on">Input</button>
+  <button data-t="riwayat">Riwayat</button>
+  <button data-t="pekerja">Pekerja</button>
+  <button data-t="set">Setelan</button>
+</nav>
+
+<script>
+const $=id=>document.getElementById(id);
+const rp=n=>'Rp '+Math.round(+n||0).toLocaleString('id-ID');
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let cfg={url:'',tok:''}, D={pekerja:[],gaji:[]};
+try{cfg=JSON.parse(localStorage.getItem('cfg'))||cfg;D=JSON.parse(localStorage.getItem('data'))||D;}catch(e){}
+
+function msg(t){const m=$('msg');m.textContent=t;m.style.display='block';setTimeout(()=>m.style.display='none',2200);}
+function save(){try{localStorage.setItem('data',JSON.stringify(D));}catch(e){}}
+
+async function load(){
+  if(!cfg.url){render();return;}
+  try{
+    const r=await fetch(cfg.url+'?token='+encodeURIComponent(cfg.tok));
+    const j=await r.json(); if(j.error)throw new Error(j.error);
+    D=j;save();$('sync').textContent='sinkron '+new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+  }catch(e){$('sync').textContent='offline';msg('Gagal sinkron: '+e.message);}
+  render();
+}
+async function post(body){
+  if(!cfg.url){msg('Isi URL di Setelan dulu');return false;}
+  try{
+    const r=await fetch(cfg.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({...body,token:cfg.tok})});
+    const j=await r.json(); if(j.error)throw new Error(j.error);
+    return true;
+  }catch(e){msg('Gagal: '+e.message);return false;}
+}
+
+function render(){
+  const opts=D.pekerja.map(p=>`<option value="${esc(p.id)}">${esc(p.nama)} (${esc(p.jabatan)})</option>`).join('');
+  const cur=$('g-pek').value;
+  $('g-pek').innerHTML=opts||'<option value="">— tambah pekerja dulu —</option>';
+  if(cur)$('g-pek').value=cur;
+  const fc=$('f-pek').value;
+  $('f-pek').innerHTML='<option value="">Semua pekerja</option>'+opts;$('f-pek').value=fc;
+  $('plist').innerHTML=D.pekerja.map(p=>`<div class="row"><div><b>${esc(p.nama)}</b><span>${esc(p.jabatan)} · ${rp(p.upah_default)}/hari</span></div><button class="del" data-dp="${esc(p.id)}">Hapus</button></div>`).join('')||'<span style="color:var(--mu)">Belum ada pekerja</span>';
+  renderRiwayat();
+}
+function renderRiwayat(){
+  const pid=$('f-pek').value,a=$('f-dari').value,b=$('f-sampai').value;
+  const L=D.gaji.filter(g=>(!pid||String(g.pekerja_id)===pid)&&(!a||g.tanggal>=a)&&(!b||g.tanggal<=b)).sort((x,y)=>y.tanggal>x.tanggal?1:-1);
+  const sum=L.reduce((s,g)=>s+(+g.total||0),0),hari=L.reduce((s,g)=>s+(+g.jumlah_hari||0),0);
+  $('f-total').textContent=rp(sum);$('f-info').textContent=L.length+' catatan · '+hari+' hari kerja';
+  $('list').innerHTML=L.map(g=>`<div class="row"><div><b>${esc(g.nama)}</b><span>${esc(g.tanggal)} · ${+g.jumlah_hari} hari × ${rp(g.upah_per_hari)}${g.proyek?' · '+esc(g.proyek):''}${g.catatan?'<br>'+esc(g.catatan):''}</span></div><div class="r"><b>${rp(g.total)}</b><button class="del" data-dg="${esc(g.id)}">Hapus</button></div></div>`).join('')||'<span style="color:var(--mu)">Tidak ada data</span>';
+}
+function hitung(){$('g-total').textContent=rp((+$('g-hari').value||0)*(+$('g-upah').value||0));}
+
+$('g-hari').oninput=$('g-upah').oninput=hitung;
+$('g-pek').onchange=()=>{const p=D.pekerja.find(x=>String(x.id)===$('g-pek').value);if(p){$('g-upah').value=p.upah_default||'';hitung();}};
+['f-pek','f-dari','f-sampai'].forEach(i=>$(i).onchange=renderRiwayat);
+
+$('g-simpan').onclick=async()=>{
+  const p=D.pekerja.find(x=>String(x.id)===$('g-pek').value);
+  const hari=+$('g-hari').value,upah=+$('g-upah').value;
+  if(!p||!hari||!upah||!$('g-tgl').value)return msg('Lengkapi tanggal, pekerja, hari, dan upah');
+  const row={tanggal:$('g-tgl').value,pekerja_id:p.id,nama:p.nama,proyek:$('g-pro').value,jumlah_hari:hari,upah_per_hari:upah,catatan:$('g-cat').value};
+  $('g-simpan').disabled=true;
+  if(await post({action:'add',sheet:'Gaji',row})){msg('Tersimpan ✓');$('g-hari').value='';$('g-cat').value='';hitung();await load();}
+  $('g-simpan').disabled=false;
+};
+$('p-simpan').onclick=async()=>{
+  const nama=$('p-nama').value.trim();if(!nama)return msg('Isi nama');
+  if(await post({action:'add',sheet:'Pekerja',row:{nama,jabatan:$('p-jab').value,upah_default:+$('p-upah').value||0}})){$('p-nama').value='';$('p-upah').value='';msg('Pekerja ditambah ✓');await load();}
+};
+document.addEventListener('click',async e=>{
+  const dg=e.target.dataset.dg,dp=e.target.dataset.dp;
+  if(dg&&confirm('Hapus catatan gaji ini?')&&await post({action:'del',sheet:'Gaji',id:dg}))load();
+  if(dp&&confirm('Hapus pekerja ini?')&&await post({action:'del',sheet:'Pekerja',id:dp}))load();
+});
+$('s-simpan').onclick=()=>{cfg={url:$('s-url').value.trim(),tok:$('s-tok').value};localStorage.setItem('cfg',JSON.stringify(cfg));load();};
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('nav button,.tab').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');$('t-'+b.dataset.t).classList.add('on');
+});
+
+$('g-tgl').value=new Date().toLocaleDateString('sv-SE');
+$('s-url').value=cfg.url;$('s-tok').value=cfg.tok;
+if(!cfg.url)document.querySelector('[data-t=set]').click();
+render();load();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
+</script>
+</body>
+</html>
